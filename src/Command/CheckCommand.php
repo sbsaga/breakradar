@@ -29,11 +29,11 @@ class CheckCommand extends Command
         $diff = new BreakingChangeDiff();
         $reporter = new ConsoleReporter();
 
-        $baseRef = 'origin/main';
+        $baseRef = $git->defaultRemoteBranch();
 
         try {
             $output->writeln("<info>Fetching base branch: {$baseRef}</info>");
-            $git->ensureBaseAvailable('main');
+            $git->fetch($baseRef);
 
             // BASE SNAPSHOT
             $output->writeln("<info>Snapshotting base branch</info>");
