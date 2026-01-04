@@ -27,4 +27,16 @@ class SnapshotStorage
             json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
     }
+
+    public function clear(): void
+    {
+        if (!is_dir($this->dir)) {
+            return;
+        }
+
+        $files = glob($this->dir . DIRECTORY_SEPARATOR . '*.json');
+        foreach ($files as $file) {
+            unlink($file);
+        }
+    }
 }
