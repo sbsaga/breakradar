@@ -59,7 +59,7 @@ class CheckCommand extends Command
         }
     }
 
-    public function legacy(): void
+    public function legacy(bool $force = false): void
     {
     }
 
