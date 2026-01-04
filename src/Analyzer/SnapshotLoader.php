@@ -1,0 +1,21 @@
+<?php
+
+namespace BreakRadar\Analyzer;
+
+use RuntimeException;
+
+class SnapshotLoader
+{
+    public function load(string $path): array
+    {
+        if (!file_exists($path)) {
+            throw new RuntimeException("Snapshot not found: {$path}");
+        }
+
+        return json_decode(
+            file_get_contents($path),
+            true,
+            flags: JSON_THROW_ON_ERROR
+        );
+    }
+}

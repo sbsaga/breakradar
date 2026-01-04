@@ -10,6 +10,9 @@ use BreakRadar\Analyzer\GitRunner;
 use BreakRadar\Analyzer\GitRepository;
 use BreakRadar\Analyzer\SnapshotStorage;
 use BreakRadar\Analyzer\PublicApiAnalyzer;
+use BreakRadar\Analyzer\SnapshotLoader;
+use BreakRadar\Diff\BreakingChangeDiff;
+use BreakRadar\Reporter\ConsoleReporter;
 
 #[AsCommand(
     name: 'check',
@@ -22,17 +25,43 @@ class CheckCommand extends Command
         $git = new GitRepository(new GitRunner());
         $storage = new SnapshotStorage();
         $analyzer = new PublicApiAnalyzer();
+        $loader = new SnapshotLoader();
+        $diff = new BreakingChangeDiff();
+        $reporter = new ConsoleReporter();
 
-        $current = $git->currentBranch();
+        $baseRef = 'origin/main';
 
-        $output->writeln("<info>Snapshotting branch: {$current}</info>");
+        try {
+            $output->writeln("<info>Fetching base branch: {$baseRef}</info>");
+            $git->ensureBaseAvailable('main');
 
-        $api = $analyzer->analyze(getcwd() . '/src');
+            // BASE SNAPSHOT
+            $output->writeln("<info>Snapshotting base branch</info>");
+            $git->checkout($baseRef);
 
-        $storage->write('head', $api);
+            $baseApi = $analyzer->analyze(getcwd() . '/src');
+            $storage->write('base', $baseApi);
 
-        $output->writeln('<info>Snapshot saved (.breakradar/head.json)</info>');
+            // HEAD SNAPSHOT
+            $output->writeln("<info>Snapshotting current branch</info>");
+            $git->restore();
 
-        return Command::SUCCESS;
+            $headApi = $analyzer->analyze(getcwd() . '/src');
+            $storage->write('head', $headApi);
+
+            // DIFF
+            $issues = $diff->diff($baseApi, $headApi);
+
+            return $reporter->report($issues, $output);
+
+        } finally {
+            $git->restore();
+        }
     }
+
+    public function legacy(): void
+    {
+    }
+
+
 }
