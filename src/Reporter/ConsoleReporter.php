@@ -44,4 +44,10 @@ final class ConsoleReporter
 
         return 1;
     }
+
+    public function report(array $issues, OutputInterface $output): int
+{
+    return 0;
+}
+
 }
