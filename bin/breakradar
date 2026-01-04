@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use BreakRadar\Command\CheckCommand;
+
+$application = new Application('BreakRadar', '0.1.0');
+
+$application->add(new CheckCommand());
+
+$application->run();

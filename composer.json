@@ -1,0 +1,25 @@
+{
+    "name": "sbsaga/breakradar",
+    "description": "Detect breaking changes between branches",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sagar Sunil Bhedodkar",
+            "email": "sagarbhedodkar456@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=8.1",
+        "symfony/console": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BreakRadar\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/breakradar"
+    ]
+}
