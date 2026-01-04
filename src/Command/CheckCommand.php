@@ -21,8 +21,7 @@ final class CheckCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $reporter = new ConsoleReporter($output);
-
-        $git = new GitRepository(new GitRunner());
+        $git      = new GitRepository(new GitRunner());
         $git->ensureClean();
 
         $storage  = new SnapshotStorage();
@@ -46,7 +45,8 @@ final class CheckCommand extends Command
             $storage->write('head', $head);
 
             return $reporter->report(
-                $diff->diff($base, $head)
+                $diff->diff($base, $head),
+                $output
             );
         } finally {
             $git->restore();

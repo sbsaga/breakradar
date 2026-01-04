@@ -8,10 +8,19 @@ final class GitRepository
 {
     private string $originalBranch;
 
-    public function __construct(
-        private readonly GitRunner $git
-    ) {
-        $this->originalBranch = $this->currentBranch();
+    public function __construct(private GitRunner $git)
+    {
+        $this->originalBranch = $this->detectCurrentBranch();
+    }
+
+    private function detectCurrentBranch(): string
+    {
+        return $this->git->run('branch --show-current');
+    }
+
+    public function currentBranch(): string
+    {
+        return $this->originalBranch;
     }
 
     public function ensureClean(): void
@@ -24,11 +33,6 @@ final class GitRepository
         }
     }
 
-    public function currentBranch(): string
-    {
-        return $this->git->run('branch --show-current');
-    }
-
     public function restore(): void
     {
         $this->checkout($this->originalBranch);
@@ -39,30 +43,36 @@ final class GitRepository
         $this->git->run("checkout {$ref}");
     }
 
+    public function fetch(string $ref): void
+    {
+        try {
+            $this->git->run("fetch origin {$ref}");
+        } catch (\Throwable) {
+            $this->git->run("fetch origin");
+        }
+    }
+
     public function defaultRemoteBranch(): string
     {
         try {
             $ref = $this->git->run('symbolic-ref refs/remotes/origin/HEAD');
             return str_replace('refs/remotes/', '', $ref);
-        } catch (\Throwable) {}
-
-        if ($this->remoteExists('main')) {
-            return 'origin/main';
+        } catch (\Throwable) {
+            // fallback
         }
 
-        if ($this->remoteExists('master')) {
-            return 'origin/master';
+        foreach (['main', 'master'] as $branch) {
+            if ($this->remoteBranchExists($branch)) {
+                return "origin/{$branch}";
+            }
         }
 
-        throw new RuntimeException('Unable to detect default branch.');
+        throw new RuntimeException(
+            'Unable to detect default branch. Expected origin/main or origin/master.'
+        );
     }
 
-    public function fetch(string $ref): void
-    {
-        $this->git->run('fetch origin');
-    }
-
-    private function remoteExists(string $branch): bool
+    private function remoteBranchExists(string $branch): bool
     {
         try {
             $this->git->run("ls-remote --exit-code --heads origin {$branch}");
