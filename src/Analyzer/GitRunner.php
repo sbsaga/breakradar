@@ -4,7 +4,7 @@ namespace BreakRadar\Analyzer;
 
 use RuntimeException;
 
-class GitRunner
+final class GitRunner
 {
     public function run(string $command): string
     {

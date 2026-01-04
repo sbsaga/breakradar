@@ -2,13 +2,13 @@
 
 namespace BreakRadar\Analyzer;
 
-class SnapshotStorage
+final class SnapshotStorage
 {
     private string $dir;
 
     public function __construct()
     {
-        $this->dir = getcwd() . DIRECTORY_SEPARATOR . '.breakradar';
+        $this->dir = sys_get_temp_dir() . '/breakradar';
 
         if (!is_dir($this->dir)) {
             mkdir($this->dir, 0777, true);
@@ -17,26 +17,14 @@ class SnapshotStorage
 
     public function path(string $name): string
     {
-        return $this->dir . DIRECTORY_SEPARATOR . $name . '.json';
+        return "{$this->dir}/{$name}.json";
     }
 
     public function write(string $name, array $data): void
     {
         file_put_contents(
             $this->path($name),
-            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            json_encode($data, JSON_PRETTY_PRINT)
         );
-    }
-
-    public function clear(): void
-    {
-        if (!is_dir($this->dir)) {
-            return;
-        }
-
-        $files = glob($this->dir . DIRECTORY_SEPARATOR . '*.json');
-        foreach ($files as $file) {
-            unlink($file);
-        }
     }
 }

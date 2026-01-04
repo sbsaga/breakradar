@@ -4,7 +4,7 @@ namespace BreakRadar\Analyzer;
 
 use RuntimeException;
 
-class SnapshotLoader
+final class SnapshotLoader
 {
     public function load(string $path): array
     {
@@ -12,10 +12,6 @@ class SnapshotLoader
             throw new RuntimeException("Snapshot not found: {$path}");
         }
 
-        return json_decode(
-            file_get_contents($path),
-            true,
-            flags: JSON_THROW_ON_ERROR
-        );
+        return json_decode(file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
     }
 }

@@ -4,7 +4,7 @@ namespace BreakRadar\Reporter;
 
 use Symfony\Component\Console\Output\OutputInterface;
 
-class ConsoleReporter
+final class ConsoleReporter
 {
     public function report(array $issues, OutputInterface $output): int
     {
@@ -14,7 +14,6 @@ class ConsoleReporter
         }
 
         $output->writeln('<error>Breaking changes detected:</error>');
-
         foreach ($issues as $issue) {
             $output->writeln(" - {$issue}");
         }

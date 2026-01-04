@@ -2,7 +2,7 @@
 
 namespace BreakRadar\Diff;
 
-class BreakingChangeDiff
+final class BreakingChangeDiff
 {
     public function diff(array $base, array $head): array
     {
@@ -15,28 +15,8 @@ class BreakingChangeDiff
             }
 
             foreach ($methods as $method) {
-                $found = false;
-
-                foreach ($head[$class] as $newMethod) {
-                    if ($method['method'] === $newMethod['method']) {
-                        $found = true;
-
-                        if ($method['params'] !== $newMethod['params']) {
-                            $issues[] = sprintf(
-                                'Method signature changed: %s::%s(%s → %s)',
-                                $class,
-                                $method['method'],
-                                implode(', ', $method['params']),
-                                implode(', ', $newMethod['params'])
-                            );
-                        }
-
-                        break;
-                    }
-                }
-
-                if (!$found) {
-                    $issues[] = "Public method removed: {$class}::{$method['method']}";
+                if (!in_array($method, $head[$class], true)) {
+                    $issues[] = "Public method removed: {$class}::{$method}";
                 }
             }
         }

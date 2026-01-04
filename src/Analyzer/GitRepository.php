@@ -4,24 +4,29 @@ namespace BreakRadar\Analyzer;
 
 use RuntimeException;
 
-class GitRepository
+final class GitRepository
 {
     private string $originalBranch;
 
     public function __construct(
-        private GitRunner $git
+        private readonly GitRunner $git
     ) {
-        $this->originalBranch = $this->detectCurrentBranch();
+        $this->originalBranch = $this->currentBranch();
     }
 
-    private function detectCurrentBranch(): string
+    public function ensureClean(): void
     {
-        return $this->git->run('branch --show-current');
+        $status = $this->git->run('status --porcelain');
+        if ($status !== '') {
+            throw new RuntimeException(
+                'Working tree is not clean. Commit or stash changes before running BreakRadar.'
+            );
+        }
     }
 
     public function currentBranch(): string
     {
-        return $this->originalBranch;
+        return $this->git->run('branch --show-current');
     }
 
     public function restore(): void
@@ -34,45 +39,30 @@ class GitRepository
         $this->git->run("checkout {$ref}");
     }
 
-    /**
-     * Production-safe default branch detection
-     */
     public function defaultRemoteBranch(): string
     {
-        // 1️⃣ Try origin/HEAD
         try {
             $ref = $this->git->run('symbolic-ref refs/remotes/origin/HEAD');
             return str_replace('refs/remotes/', '', $ref);
-        } catch (\Throwable) {
-            // continue
-        }
+        } catch (\Throwable) {}
 
-        // 2️⃣ Fallback to main
-        if ($this->remoteBranchExists('main')) {
+        if ($this->remoteExists('main')) {
             return 'origin/main';
         }
 
-        // 3️⃣ Fallback to master
-        if ($this->remoteBranchExists('master')) {
+        if ($this->remoteExists('master')) {
             return 'origin/master';
         }
 
-        throw new RuntimeException(
-            'Unable to detect default branch. Expected origin/main or origin/master.'
-        );
+        throw new RuntimeException('Unable to detect default branch.');
     }
 
     public function fetch(string $ref): void
     {
-        try {
-            $this->git->run("fetch origin {$ref}");
-        } catch (\Throwable) {
-            // Safe fallback
-            $this->git->run("fetch origin");
-        }
+        $this->git->run('fetch origin');
     }
 
-    private function remoteBranchExists(string $branch): bool
+    private function remoteExists(string $branch): bool
     {
         try {
             $this->git->run("ls-remote --exit-code --heads origin {$branch}");

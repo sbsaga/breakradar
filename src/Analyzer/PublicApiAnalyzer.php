@@ -2,64 +2,69 @@
 
 namespace BreakRadar\Analyzer;
 
-use ReflectionClass;
-use ReflectionMethod;
-
-class PublicApiAnalyzer
+final class PublicApiAnalyzer
 {
-    public function analyze(string $srcDir): array
+    public function analyze(string $srcDir, string $namespacePrefix): array
     {
-        $result = [];
+        $api = [];
 
         foreach ($this->phpFiles($srcDir) as $file) {
-            require_once $file;
+            $tokens = token_get_all(file_get_contents($file));
+            $this->extract($tokens, $api, $namespacePrefix);
         }
 
-        foreach (get_declared_classes() as $class) {
-            $ref = new ReflectionClass($class);
+        ksort($api);
+        return $api;
+    }
 
-            if (!$ref->isUserDefined()) {
-                continue;
-            }
+    private function extract(array $tokens, array &$api, string $nsPrefix): void
+    {
+        $namespace = '';
+        $class = null;
+        $visibility = 'public';
 
-            if (str_starts_with($ref->getName(), 'Symfony\\')) {
-                continue;
-            }
+        for ($i = 0; $i < count($tokens); $i++) {
+            $token = $tokens[$i];
 
-            foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-                if ($method->isConstructor()) {
-                    continue;
+            if ($token[0] === T_NAMESPACE) {
+                $namespace = '';
+                for ($j = $i + 1; isset($tokens[$j]); $j++) {
+                    if ($tokens[$j] === ';') break;
+                    if (is_array($tokens[$j])) {
+                        $namespace .= $tokens[$j][1];
+                    }
                 }
+                $namespace = trim($namespace);
+            }
 
-                $result[$ref->getName()][] = [
-                    'method' => $method->getName(),
-                    'params' => array_map(
-                        fn($p) => $p->getName(),
-                        $method->getParameters()
-                    ),
-                ];
+            if ($token[0] === T_CLASS) {
+                $class = $tokens[$i + 2][1];
+                $fqcn = $namespace . '\\' . $class;
+
+                if (!str_starts_with($fqcn, $nsPrefix)) {
+                    $class = null;
+                } else {
+                    $api[$fqcn] = [];
+                }
+            }
+
+            if ($token[0] === T_PUBLIC) {
+                $visibility = 'public';
+            }
+
+            if ($token[0] === T_FUNCTION && $class && $visibility === 'public') {
+                $method = $tokens[$i + 2][1];
+                $api[$namespace . '\\' . $class][] = $method;
             }
         }
-
-        ksort($result);
-
-        return $result;
     }
 
     private function phpFiles(string $dir): array
     {
-        $rii = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($dir)
+        return iterator_to_array(
+            new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($dir)
+            )
         );
-
-        $files = [];
-
-        foreach ($rii as $file) {
-            if ($file->isFile() && $file->getExtension() === 'php') {
-                $files[] = $file->getPathname();
-            }
-        }
-
-        return $files;
     }
 }
