@@ -82,4 +82,7 @@ class CheckCommand extends Command
     echo "This is a test method for BreakRadar detection";
 }
 
+    public function doSomething($param) {}
+
+
 }
