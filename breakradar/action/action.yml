@@ -1,0 +1,19 @@
+name: BreakRadar
+description: Detect breaking changes automatically
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v3
+      with:
+        php-version: '8.2'
+        extensions: mbstring, json
+
+    - name: Install Composer dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Run BreakRadar
+      run: php bin/breakradar check
