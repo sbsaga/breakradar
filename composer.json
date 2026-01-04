@@ -1,7 +1,7 @@
 {
     "name": "sbsaga/breakradar",
     "description": "Detect breaking changes between branches",
-    "type": "project",
+    "type": "library",
     "license": "MIT",
     "authors": [
         {
