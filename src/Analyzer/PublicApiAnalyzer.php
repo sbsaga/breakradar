@@ -9,7 +9,12 @@ final class PublicApiAnalyzer
         $api = [];
 
         foreach ($this->phpFiles($srcDir) as $file) {
-            $tokens = token_get_all(file_get_contents($file));
+            $code = file_get_contents($file);
+            if ($code === false) {
+                continue;
+            }
+
+            $tokens = token_get_all($code);
             $this->extract($tokens, $api, $namespacePrefix);
         }
 
@@ -26,10 +31,12 @@ final class PublicApiAnalyzer
         for ($i = 0; $i < count($tokens); $i++) {
             $token = $tokens[$i];
 
-            if ($token[0] === T_NAMESPACE) {
+            if (is_array($token) && $token[0] === T_NAMESPACE) {
                 $namespace = '';
                 for ($j = $i + 1; isset($tokens[$j]); $j++) {
-                    if ($tokens[$j] === ';') break;
+                    if ($tokens[$j] === ';') {
+                        break;
+                    }
                     if (is_array($tokens[$j])) {
                         $namespace .= $tokens[$j][1];
                     }
@@ -37,8 +44,12 @@ final class PublicApiAnalyzer
                 $namespace = trim($namespace);
             }
 
-            if ($token[0] === T_CLASS) {
-                $class = $tokens[$i + 2][1];
+            if (is_array($token) && $token[0] === T_CLASS) {
+                $class = $tokens[$i + 2][1] ?? null;
+                if (!$class) {
+                    continue;
+                }
+
                 $fqcn = $namespace . '\\' . $class;
 
                 if (!str_starts_with($fqcn, $nsPrefix)) {
@@ -48,23 +59,42 @@ final class PublicApiAnalyzer
                 }
             }
 
-            if ($token[0] === T_PUBLIC) {
+            if (is_array($token) && $token[0] === T_PUBLIC) {
                 $visibility = 'public';
             }
 
-            if ($token[0] === T_FUNCTION && $class && $visibility === 'public') {
-                $method = $tokens[$i + 2][1];
-                $api[$namespace . '\\' . $class][] = $method;
+            if (
+                is_array($token)
+                && $token[0] === T_FUNCTION
+                && $class
+                && $visibility === 'public'
+            ) {
+                $method = $tokens[$i + 2][1] ?? null;
+                if ($method) {
+                    $api[$namespace . '\\' . $class][] = $method;
+                }
             }
         }
     }
 
     private function phpFiles(string $dir): array
     {
-        return iterator_to_array(
-            new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($dir)
+        $files = [];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(
+                $dir,
+                \FilesystemIterator::SKIP_DOTS
             )
         );
+
+        foreach ($iterator as $file) {
+            /** @var \SplFileInfo $file */
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $files[] = $file->getRealPath();
+            }
+        }
+
+        return $files;
     }
 }
