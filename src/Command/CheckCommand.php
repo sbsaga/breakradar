@@ -77,7 +77,4 @@ class CheckCommand extends Command
         }
     }
 
-    public function legacy(bool $force = false): void
-    {
-    }
 }
