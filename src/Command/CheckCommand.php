@@ -77,4 +77,9 @@ class CheckCommand extends Command
         }
     }
 
+    public function testBreakRadar(): void
+{
+    echo "This is a test method for BreakRadar detection";
+}
+
 }
