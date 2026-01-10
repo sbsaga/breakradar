@@ -57,9 +57,7 @@ final class GitRepository
         try {
             $ref = $this->git->run('symbolic-ref refs/remotes/origin/HEAD');
             return str_replace('refs/remotes/', '', $ref);
-        } catch (\Throwable) {
-            // fallback
-        }
+        } catch (\Throwable) {}
 
         foreach (['main', 'master'] as $branch) {
             if ($this->remoteBranchExists($branch)) {
@@ -67,9 +65,7 @@ final class GitRepository
             }
         }
 
-        throw new RuntimeException(
-            'Unable to detect default branch. Expected origin/main or origin/master.'
-        );
+        throw new RuntimeException('Unable to detect default branch.');
     }
 
     private function remoteBranchExists(string $branch): bool

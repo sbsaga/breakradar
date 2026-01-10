@@ -28,7 +28,7 @@ final class SnapshotStorage
     public function clear(): void
     {
         foreach (glob($this->dir . DIRECTORY_SEPARATOR . '*.json') as $file) {
-            unlink($file);
+            @unlink($file);
         }
     }
 }

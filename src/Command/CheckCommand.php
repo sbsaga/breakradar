@@ -6,12 +6,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use BreakRadar\Analyzer\{
-    GitRunner,
-    GitRepository,
-    PublicApiAnalyzer,
-    SnapshotStorage
-};
+use BreakRadar\Analyzer\{GitRunner, GitRepository, PublicApiAnalyzer, SnapshotStorage};
 use BreakRadar\Diff\BreakingChangeDiff;
 use BreakRadar\Reporter\ConsoleReporter;
 
@@ -36,18 +31,15 @@ final class CheckCommand extends Command
 
             $reporter->debug("Snapshotting base branch");
             $git->checkout($baseRef);
-            $base = $analyzer->analyze(getcwd() . '/src', 'BreakRadar\\');
+            $base = $analyzer->analyze(getcwd() . '/src');
             $storage->write('base', $base);
 
             $reporter->debug("Snapshotting current branch");
             $git->restore();
-            $head = $analyzer->analyze(getcwd() . '/src', 'BreakRadar\\');
+            $head = $analyzer->analyze(getcwd() . '/src');
             $storage->write('head', $head);
 
-            return $reporter->report(
-                $diff->diff($base, $head),
-                $output
-            );
+            return $reporter->report($diff->diff($base, $head));
         } finally {
             $git->restore();
         }

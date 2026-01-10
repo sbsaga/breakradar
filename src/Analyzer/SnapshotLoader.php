@@ -12,10 +12,6 @@ final class SnapshotLoader
             throw new RuntimeException("Snapshot not found: {$path}");
         }
 
-        return json_decode(
-            file_get_contents($path),
-            true,
-            JSON_THROW_ON_ERROR
-        );
+        return json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
     }
 }

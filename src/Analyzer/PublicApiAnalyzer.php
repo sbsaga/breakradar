@@ -12,7 +12,7 @@ final class PublicApiAnalyzer
         $result = [];
 
         foreach ($this->phpFiles($srcDir) as $file) {
-            require_once $file;
+            @require_once $file;
         }
 
         foreach (get_declared_classes() as $class) {
@@ -20,11 +20,11 @@ final class PublicApiAnalyzer
                 continue;
             }
 
-            $ref = new ReflectionClass($class);
+            try {
+                $ref = new ReflectionClass($class);
+            } catch (\Throwable) { continue; }
 
-            if (!$ref->isUserDefined()) {
-                continue;
-            }
+            if (!$ref->isUserDefined()) continue;
 
             foreach ($ref->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
                 if ($method->isConstructor()) continue;
@@ -42,17 +42,14 @@ final class PublicApiAnalyzer
 
     private function phpFiles(string $dir): array
     {
-        $rii = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($dir)
-        );
-
+        if (!is_dir($dir)) return [];
+        $rii = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
         $files = [];
         foreach ($rii as $file) {
             if ($file->isFile() && $file->getExtension() === 'php') {
                 $files[] = $file->getPathname();
             }
         }
-
         return $files;
     }
 }
